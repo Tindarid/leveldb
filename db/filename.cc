@@ -25,9 +25,9 @@ static std::string MakeFileName(const std::string& dbname, uint64_t number,
   return dbname + buf;
 }
 
-std::string LogFileName(const std::string& dbname, uint64_t number) {
+std::string LogFileName(const std::string& dbname, uint64_t number, const char *directory) {
   assert(number > 0);
-  return MakeFileName(dbname, number, "log");
+  return MakeFileName(directory ? dbname + "/" + directory : dbname, number, "log");
 }
 
 std::string TableFileName(const std::string& dbname, uint64_t number) {
@@ -101,6 +101,9 @@ bool ParseFileName(const std::string& filename, uint64_t* number,
   } else {
     // Avoid strtoull() to keep filename format independent of the
     // current locale
+    if (rest.starts_with("log_files/")) {
+      rest.remove_prefix(strlen("log_files/"));
+    }
     uint64_t num;
     if (!ConsumeDecimalNumber(&rest, &num)) {
       return false;

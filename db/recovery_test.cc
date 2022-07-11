@@ -93,7 +93,7 @@ class RecoveryTest : public testing::Test {
     return dbname_ + "/" + current;
   }
 
-  std::string LogName(uint64_t number) { return LogFileName(dbname_, number); }
+  std::string LogName(uint64_t number) { return LogFileName(dbname_, number, nullptr); }
 
   size_t RemoveLogFiles() {
     // Linux allows unlinking open files, but Windows does not.
@@ -140,7 +140,7 @@ class RecoveryTest : public testing::Test {
 
   // Directly construct a log file that sets key to val.
   void MakeLogFile(uint64_t lognum, SequenceNumber seq, Slice key, Slice val) {
-    std::string fname = LogFileName(dbname_, lognum);
+    std::string fname = LogFileName(dbname_, lognum, nullptr);
     WritableFile* file;
     ASSERT_LEVELDB_OK(env_->NewWritableFile(fname, &file));
     log::Writer writer(file);

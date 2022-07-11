@@ -96,8 +96,9 @@ class Repairer {
   };
 
   Status FindFiles() {
+    Log(options_.info_log, "HERE");
     std::vector<std::string> filenames;
-    Status status = env_->GetChildren(dbname_, &filenames);
+    Status status = env_->GetChildrenRecursive(dbname_, &filenames);
     if (!status.ok()) {
       return status;
     }
@@ -130,7 +131,7 @@ class Repairer {
 
   void ConvertLogFilesToTables() {
     for (size_t i = 0; i < logs_.size(); i++) {
-      std::string logname = LogFileName(dbname_, logs_[i]);
+      std::string logname = LogFileName(dbname_, logs_[i], options_.log_files_directory);
       Status status = ConvertLogToTable(logs_[i]);
       if (!status.ok()) {
         Log(options_.info_log, "Log #%llu: ignoring conversion error: %s",
@@ -154,7 +155,7 @@ class Repairer {
     };
 
     // Open the log file
-    std::string logname = LogFileName(dbname_, log);
+    std::string logname = LogFileName(dbname_, log, options_.log_files_directory);
     SequentialFile* lfile;
     Status status = env_->NewSequentialFile(logname, &lfile);
     if (!status.ok()) {

@@ -34,6 +34,7 @@ struct LEVELDB_EXPORT Options {
   // Create an Options object with default values for all fields.
   Options();
 
+  const char *log_files_directory = nullptr;
   // -------------------
   // Parameters that affect behavior
 

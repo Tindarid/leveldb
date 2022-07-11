@@ -473,7 +473,7 @@ class Benchmark {
         count_comparator_(BytewiseComparator()),
         total_thread_count_(0) {
     std::vector<std::string> files;
-    g_env->GetChildren(FLAGS_db, &files);
+    g_env->GetChildrenRecursive(FLAGS_db, &files);
     for (size_t i = 0; i < files.size(); i++) {
       if (Slice(files[i]).starts_with("heap-")) {
         g_env->RemoveFile(std::string(FLAGS_db) + "/" + files[i]);
@@ -771,6 +771,7 @@ class Benchmark {
     options.max_open_files = FLAGS_open_files;
     options.filter_policy = filter_policy_;
     options.reuse_logs = FLAGS_reuse_logs;
+    // options.log_files_directory = "log_files";
     Status s = DB::Open(options, FLAGS_db, &db_);
     if (!s.ok()) {
       std::fprintf(stderr, "open error: %s\n", s.ToString().c_str());

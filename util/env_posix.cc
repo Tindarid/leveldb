@@ -615,6 +615,38 @@ class PosixEnv : public Env {
     return Status::OK();
   }
 
+  Status GetChildrenRecursive(const std::string& directory_path,
+                     std::vector<std::string>* result) override {
+    result->clear();
+    ::DIR* dir = ::opendir(directory_path.c_str());
+    if (dir == nullptr) {
+      return PosixError(directory_path, errno);
+    }
+    struct ::dirent* entry;
+    while ((entry = ::readdir(dir)) != nullptr) {
+      const std::string name(entry->d_name);
+      if (entry->d_type != DT_DIR || name == "." || name == "..") {
+        result->emplace_back(name);
+        continue;
+      }
+      std::vector<std::string> new_result;
+      const auto status = GetChildrenRecursive(directory_path + "/" + name, &new_result);
+      if (!status.ok()) {
+        ::closedir(dir);
+        return status;
+      }
+      for (auto &r : new_result) {
+        if (r == "." || r == "..") {
+          continue;
+        }
+        r = name + "/" + r;
+      }
+      result->insert(result->end(), new_result.begin(), new_result.end());
+    }
+    ::closedir(dir);
+    return Status::OK();
+  }
+
   Status RemoveFile(const std::string& filename) override {
     if (::unlink(filename.c_str()) != 0) {
       return PosixError(filename, errno);

@@ -236,7 +236,7 @@ void DBImpl::RemoveObsoleteFiles() {
   versions_->AddLiveFiles(&live);
 
   std::vector<std::string> filenames;
-  env_->GetChildren(dbname_, &filenames);  // Ignoring errors on purpose
+  env_->GetChildrenRecursive(dbname_, &filenames);  // Ignoring errors on purpose
   uint64_t number;
   FileType type;
   std::vector<std::string> files_to_delete;
@@ -337,7 +337,7 @@ Status DBImpl::Recover(VersionEdit* edit, bool* save_manifest) {
   const uint64_t min_log = versions_->LogNumber();
   const uint64_t prev_log = versions_->PrevLogNumber();
   std::vector<std::string> filenames;
-  s = env_->GetChildren(dbname_, &filenames);
+  s = env_->GetChildrenRecursive(dbname_, &filenames);
   if (!s.ok()) {
     return s;
   }
@@ -401,7 +401,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
   mutex_.AssertHeld();
 
   // Open the log file
-  std::string fname = LogFileName(dbname_, log_number);
+  std::string fname = LogFileName(dbname_, log_number, options_.log_files_directory);
   SequentialFile* file;
   Status status = env_->NewSequentialFile(fname, &file);
   if (!status.ok()) {
@@ -1362,7 +1362,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       assert(versions_->PrevLogNumber() == 0);
       uint64_t new_log_number = versions_->NewFileNumber();
       WritableFile* lfile = nullptr;
-      s = env_->NewWritableFile(LogFileName(dbname_, new_log_number), &lfile);
+      s = env_->NewWritableFile(LogFileName(dbname_, new_log_number, options_.log_files_directory), &lfile);
       if (!s.ok()) {
         // Avoid chewing through file number space in a tight loop.
         versions_->ReuseFileNumber(new_log_number);
@@ -1482,6 +1482,10 @@ DB::~DB() = default;
 
 Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr) {
   *dbptr = nullptr;
+  if (options.log_files_directory) {
+    options.env->CreateDir(dbname); // TODO: remove
+    options.env->CreateDir(dbname + "/" + options.log_files_directory);
+  }
 
   DBImpl* impl = new DBImpl(options, dbname);
   impl->mutex_.Lock();
@@ -1493,7 +1497,7 @@ Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr) {
     // Create new log and a corresponding memtable.
     uint64_t new_log_number = impl->versions_->NewFileNumber();
     WritableFile* lfile;
-    s = options.env->NewWritableFile(LogFileName(dbname, new_log_number),
+    s = options.env->NewWritableFile(LogFileName(dbname, new_log_number, options.log_files_directory),
                                      &lfile);
     if (s.ok()) {
       edit.SetLogNumber(new_log_number);
@@ -1528,7 +1532,7 @@ Snapshot::~Snapshot() = default;
 Status DestroyDB(const std::string& dbname, const Options& options) {
   Env* env = options.env;
   std::vector<std::string> filenames;
-  Status result = env->GetChildren(dbname, &filenames);
+  Status result = env->GetChildrenRecursive(dbname, &filenames);
   if (!result.ok()) {
     // Ignore error in case directory does not exist
     return Status::OK();

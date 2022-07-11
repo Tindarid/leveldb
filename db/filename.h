@@ -31,7 +31,7 @@ enum FileType {
 // Return the name of the log file with the specified number
 // in the db named by "dbname".  The result will be prefixed with
 // "dbname".
-std::string LogFileName(const std::string& dbname, uint64_t number);
+std::string LogFileName(const std::string& dbname, uint64_t number, const char *directory);
 
 // Return the name of the sstable with the specified number
 // in the db named by "dbname".  The result will be prefixed with

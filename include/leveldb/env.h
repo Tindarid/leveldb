@@ -118,6 +118,9 @@ class LEVELDB_EXPORT Env {
   // Original contents of *results are dropped.
   virtual Status GetChildren(const std::string& dir,
                              std::vector<std::string>* result) = 0;
+
+  virtual Status GetChildrenRecursive(const std::string& dir,
+                             std::vector<std::string>* result) = 0;
   // Delete the named file.
   //
   // The default implementation calls DeleteFile, to support legacy Env
@@ -361,6 +364,10 @@ class LEVELDB_EXPORT EnvWrapper : public Env {
   Status GetChildren(const std::string& dir,
                      std::vector<std::string>* r) override {
     return target_->GetChildren(dir, r);
+  }
+  Status GetChildrenRecursive(const std::string& dir,
+                     std::vector<std::string>* r) override {
+    return target_->GetChildrenRecursive(dir, r);
   }
   Status RemoveFile(const std::string& f) override {
     return target_->RemoveFile(f);
